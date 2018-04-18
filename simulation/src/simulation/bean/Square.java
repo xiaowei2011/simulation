@@ -95,9 +95,9 @@ public class Square {
 //			System.out.println("logicNeighbors.size:" + nodes[i].logicNeighbors.size());
 		}
 		Node.AVG_CDF = (double) Node.NEIGHBOR_NUM / Node.LOGIC_NEIGHBOR_NUM;
-		if(curTime % sampleInterval == 0 || Node.AVG_CDF == 1) {
-			writer.write(String.format("%d %s\n", curTime, Node.AVG_CDF));		
-		}
+//		if(curTime % sampleInterval == 0 || Node.AVG_CDF == 1) {
+//			writer.write(String.format("%d %s\n", curTime, Node.AVG_CDF));		
+//		}
 //		System.out.printf("time:%d, CDF:%s\n", curTime, Node.AVG_CDF);
 //		System.out.printf("time:%d, 进度:%%%f\n", curTime, Node.AVG_CDF * 100);
 		if(dynamic)

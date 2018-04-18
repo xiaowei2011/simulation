@@ -34,7 +34,7 @@ public class Uconnect extends Node {
 		schedule = Arrays.copyOfRange(sche, offset, runTime + offset);
 	}
 	
-	protected int findPrime(double dc){
+	int findP(double dc){
 		double diff = 0;
 		for (int i=0; i< Const.PRIME.length; i++)
 		{

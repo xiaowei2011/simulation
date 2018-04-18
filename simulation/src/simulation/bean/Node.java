@@ -197,7 +197,7 @@ public class Node implements Comparable<Node>{
 		return -1;
 	}
 	
-	protected int findPrime(double dc) {
+	protected static int findPrime(double dc) {
 		int d = (int) Math.round(1 / dc);
 		if(isPrime(d)) {
 			return d;
@@ -220,7 +220,7 @@ public class Node implements Comparable<Node>{
 		return 0;
 	}
 	
-	public boolean isPrime(int n) {
+	public static boolean isPrime(int n) {
 		if (n < 2) {
 			return false;
 		}
