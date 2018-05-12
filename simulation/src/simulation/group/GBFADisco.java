@@ -20,6 +20,10 @@ public class GBFADisco extends Disco {
 	public GBFADisco(double dc, int runTime) {
 		super(dc, runTime);
 	}
+	
+	public GBFADisco(double dc, int runTime, int offset) {
+		super(dc, runTime, offset);
+	}
 
 	@Override
 	protected boolean discovery(Node node, int slot) {

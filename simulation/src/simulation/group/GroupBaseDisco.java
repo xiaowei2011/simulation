@@ -18,6 +18,10 @@ public class GroupBaseDisco extends Disco{
 		super(dc, runTime);
 	}
 	
+	public GroupBaseDisco(double dc, int runTime, int offset) {
+		super(dc, runTime, offset);
+	}
+	
 	protected boolean discovery(Node node, int slot) {
 		boolean dis = super.discovery(node, slot);
 		if(!dis) {

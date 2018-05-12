@@ -4,15 +4,18 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+
+import simulation.Disco;
 
 /**
  * @autor sunweijie
  * @since 2018年3月20日 下午7:33:09
  */
-public class Square {
+public class DiscoSquare {
 	
 	//场地长度
 	static double length;
@@ -27,7 +30,7 @@ public class Square {
 	//是否对称（所有节点占空比相同）
 	boolean symmetrical;
 	//动态
-	public static boolean dynamic = true;
+	public static boolean dynamic = false;
 	public static double speed = 0.05;
 	//最小移动速度
 	public static double minSpeed = 0.01;
@@ -42,11 +45,51 @@ public class Square {
 	//采样间隔
 	public static int sampleInterval = 100;
 	
-	static Map<Integer, double[][]> positions = new HashMap<>();
+	//键->占空比，值->节点/时间/位置/目标位置/速度
+	static Map<Double, double[][][]> dynamicPositions = new HashMap<>();
+	//键->占空比，值->节点/位置
+	static Map<Double, double[][]> staticPositions = new HashMap<>();
+	//键->占空比，值->节点/偏移量
+	static Map<Double, int[]> offsets = new HashMap<>();
 	
-	public Square() {}
+	static{
+		init(0.02, 10000, 200);
+	}
 	
-	public Square(double length, double width, int runTime) {
+	public static void init(double maxDutyCycle, int maxTime, int maxNodeNum) {
+		dynamicPositions.clear();
+		staticPositions.clear();
+		offsets.clear();
+		double dc = 0.02;
+		for(; dc <= maxDutyCycle; dc += 0.02) {
+			double[][][] dp = new double[maxNodeNum][maxTime][7];
+			double[][] sp = new double[maxNodeNum][2];
+			int[] of = new int[maxNodeNum];
+			for(int i = 0; i < maxNodeNum; i++) {
+				double[] p = new double[2];
+				p[0] =  random.nextDouble() * length;
+				p[1] =  random.nextDouble() * length;
+				sp[i] = p;
+				double[][] dpp = new double[maxTime][7];
+				dpp[0][0] = p[0];
+				dpp[0][1] = p[1];
+				calculateTargetAndSpeed(dpp[0]);
+				for(int j = 1; j < maxTime; j++) {
+					dpp[j] = getNextPosition(dpp[j - 1]);
+				}
+				dp[i] = dpp;
+				int[] prime = Disco.findPrimePair(dc);
+				of[i] = random.nextInt(prime[0] * prime[1]);
+			}
+			dynamicPositions.put(dc, dp);
+			staticPositions.put(dc, sp); 
+			offsets.put(dc, of);
+		}
+	}
+	
+	public DiscoSquare() {}
+	
+	public DiscoSquare(double length, double width, int runTime) {
 		Square.length = length;
 		Square.width = width;
 		this.runTime = runTime;
@@ -56,29 +99,33 @@ public class Square {
 		double dc = dutyCycle;
 		this.dc = dc;
 		nodes = new Node[nodeNum];
-		double[][] position = positions.get(nodeNum);
-		if(position == null) {
-			position = new double[nodeNum][2];
-			for(int i = 0; i < position.length; i++) {
-				position[i][0] = random.nextDouble() * length;
-				position[i][1] = random.nextDouble() * width;
-			}
-			positions.put(nodeNum, position);
-		}
+		int[] of = offsets.get(dc);
 		Constructor<?> con;
 		try {
-			con = clazz.getConstructor(double.class, int.class);
-			for(int i = 0; i < nodes.length; i++) {
-				nodes[i] = (Node) con.newInstance(dc, runTime);
-				nodes[i].posX =  position[i][0];
-				nodes[i].posY =  position[i][1];
-				if(dynamic) {
-					 calculateTargetAndSpeed(nodes[i]);
+			con = clazz.getConstructor(double.class, int.class, int.class);
+			for (int i = 0; i < nodes.length; i++) {
+				nodes[i] = (Node) con.newInstance(dc, runTime, of[i]);
+				nodes[i].id = i;
+				if (dynamic) {
+					double[][][] dp = dynamicPositions.get(dc);
+					double[] p = dp[i][0];
+					nodes[i].posX = p[0];
+					nodes[i].posY = p[1];
+					nodes[i].targetPosX = p[2];
+					nodes[i].targetPosY = p[3];
+					nodes[i].speed = p[4];
+					nodes[i].speedX = p[5];
+					nodes[i].speedY = p[6];
+				} else {
+					double[][] sp = staticPositions.get(dc);
+					nodes[i].posX = sp[i][0];
+					nodes[i].posY = sp[i][1];
 				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
 	}
 	
 	void discovery() throws IOException {
@@ -100,9 +147,10 @@ public class Square {
 //		}
 //		System.out.printf("time:%d, CDF:%s\n", curTime, Node.AVG_CDF);
 //		System.out.printf("time:%d, 进度:%%%f\n", curTime, Node.AVG_CDF * 100);
-		if(dynamic)
-		for(int i = 0; i < nodes.length; i++) {
-			move(nodes[i]);
+		if(dynamic) {
+			for(int i = 0; i < nodes.length; i++) {
+				move(nodes[i]);
+			}
 		}
 		curTime++;
 	}
@@ -135,11 +183,16 @@ public class Square {
 	// 节点移动
 	void move(Node node) {
 		// 到达目标
-		if (node.targetPosX - node.posX <= node.speedX && node.targetPosY - node.posY <= node.speedY) {
-			calculateTargetAndSpeed(node);
-		}
-		node.posX += node.speedX;
-		node.posY += node.speedY;
+		double[][][] dp = dynamicPositions.get(node.dutyCycle);
+		node.cur++;
+		double[] p = dp[node.id][node.cur];
+		node.posX = p[0];
+		node.posY = p[1];
+		node.targetPosX = p[2];
+		node.targetPosY = p[3];
+		node.speed = p[4];
+		node.speedX = p[5];
+		node.speedY = p[6];
 	}
 
 	void calculateTargetAndSpeed(Node node) {
@@ -151,6 +204,27 @@ public class Square {
 				/ node.speed;
 		node.speedX = (node.targetPosX - node.posX) / t;
 		node.speedY = (node.targetPosY - node.posY) / t;
+	}
+	
+	static void calculateTargetAndSpeed(double[] p) {
+		p[2] = random.nextDouble() * length;
+		p[3] = random.nextDouble() * width;
+		double dif = maxSpeed - minSpeed;
+		p[4] = minSpeed + random.nextDouble() * dif;
+		double t = Math.sqrt(Math.pow(p[2] - p[0], 2) + Math.pow(p[3] - p[1], 2))
+				/ p[4];
+		p[5] = (p[2] - p[0]) / t;
+		p[6] = (p[3] - p[1]) / t;
+	}
+	
+	static double[] getNextPosition(double[] po) {
+		double[] p = Arrays.copyOf(po, po.length);
+		if (p[2] - p[0] <= p[5] && p[3] - p[1] <= p[6]) {
+			calculateTargetAndSpeed(p);
+		}
+		p[0] += p[5];
+		p[1] += p[6];
+		return po;
 	}
 	
 	void calculateIncSlot() {

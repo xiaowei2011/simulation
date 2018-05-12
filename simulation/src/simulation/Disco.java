@@ -41,7 +41,25 @@ public class Disco extends Node{
 		schedule = Arrays.copyOfRange(sche, offset, runTime + offset);
 	}
 	
-	int[] findPrimePair(double dc) {
+	public Disco(double dc, int runTime, int offset) {
+		int[] p = findPrimePair(dc);
+		p1 = p[0];
+		p2 = p[1];
+		this.offset = offset;
+		boolean[] sche = sches.get(dc);
+		if(sche == null) {
+			sche = new boolean[runTime + p1 * p2];
+			for(int i = 0; i < sche.length; i++) {
+				if(i % p1 == 0 || i % p2 == 0) {
+					sche[i] = true;
+				}
+			}
+			sches.put(dc, sche);
+		}
+		schedule = Arrays.copyOfRange(sche, offset, runTime + offset);
+	}
+	
+	public static int[] findPrimePair(double dc) {
 		int[] p = new int[2];
 		if(dc == 0.001) {
 			p[0] = 1997;
