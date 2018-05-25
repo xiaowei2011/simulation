@@ -11,8 +11,10 @@ import simulation.bean.Square;
 public class Main {
 	
 	public static void main(String[] args) {
-		 avgDTandNodeNum();
-//		 cdfAndDOI();
+//		avgDTandNodeNum();
+//		avgDTandDC();
+//		cdfbaseDisco();
+		cdfOneHop();
 		System.out.println("发现完成");
 	}
 	
@@ -53,8 +55,11 @@ public class Main {
 	
 	public static void cdfOneHop() {
 		Square square = new Square(100, 100, 10000);
+		Square.write = true;
 		int nodeNum = 200;
 		double dc = 0.02;
+		GroupBaseDisco.NBP = 0.5;
+		Node.radioRange = 150;
 		square.initNodes(Disco.class, nodeNum, dc);
 		System.out.println("Disco");
 		square.run("C:\\Users\\Administrator\\Desktop\\论文\\数据\\disco.txt");
@@ -102,14 +107,14 @@ public class Main {
 	//静态场景下平均发现延迟受占空比的影响
 	public static void avgDTandDC() {
 		Square square = new Square(500, 500, 50000);
-		Square.dynamic = true;
-		Square.maxSpeed = Square.minSpeed = 0.02;
+//		Square.dynamic = true;
+//		Square.maxSpeed = Square.minSpeed = 0.02;
 		int n = 5;
 		int nodeNum = 200;
 		double[][][] result = new double[3][n][3];
 		double dc = 0.02;
-		GroupBaseDisco.NBP = 0.5;
-//		GBFADisco.NBP = 0.8
+		GroupBaseDisco.NBP = 1.4;
+		GBFADisco.NBP = 0.4;
 		GBAADisco.ENBR = 0.1;
 		for(int i = 0; i < n; i++, dc += 0.02) {
 			System.out.println(dc);
@@ -129,7 +134,7 @@ public class Main {
 			
 			square.initNodes(GBFADisco.class, nodeNum, dc);
 			System.out.println("GBFADisco");
-			square.run("C:\\Users\\Administrator\\Desktop\\论文\\数据\\GBAADisco.txt");
+			square.run("C:\\Users\\Administrator\\Desktop\\论文\\数据\\GBFADisco.txt");
 			result[2][i][0] = Node.AVG_DISCOVERY_TIME;
 			result[2][i][1] = Node.AVG_INC_SLOT_RATE;
 			result[2][i][2] = Node.AVG_CDF;

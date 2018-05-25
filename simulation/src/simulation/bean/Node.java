@@ -140,7 +140,7 @@ public class Node implements Comparable<Node>{
 	}
 	
 	//计算两节点是否在各自通信范围内
-	boolean isWithinRadioRange(Node node) {
+	public boolean isWithinRadioRange(Node node) {
 		double dx = node.posX - this.posX;
 		double dy = node.posY - this.posY;
 		double d = dx * dx + dy * dy;

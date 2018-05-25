@@ -27,12 +27,14 @@ public class Square {
 	//是否对称（所有节点占空比相同）
 	boolean symmetrical;
 	//动态
-	public static boolean dynamic = true;
+	public static boolean dynamic = false;
 	public static double speed = 0.05;
 	//最小移动速度
 	public static double minSpeed = 0.01;
 	//最大移动速度
 	public static double maxSpeed = 0.1;
+	
+	public static boolean write;
 	
 	BufferedWriter  writer;
 	
@@ -95,9 +97,11 @@ public class Square {
 //			System.out.println("logicNeighbors.size:" + nodes[i].logicNeighbors.size());
 		}
 		Node.AVG_CDF = (double) Node.NEIGHBOR_NUM / Node.LOGIC_NEIGHBOR_NUM;
-//		if(curTime % sampleInterval == 0 || Node.AVG_CDF == 1) {
-//			writer.write(String.format("%d %s\n", curTime, Node.AVG_CDF));		
-//		}
+		if(write) {			
+			if(curTime % sampleInterval == 0 || Node.AVG_CDF == 1) {
+				writer.write(String.format("%d %s\n", curTime, Node.AVG_CDF));		
+			}
+		}
 //		System.out.printf("time:%d, CDF:%s\n", curTime, Node.AVG_CDF);
 //		System.out.printf("time:%d, 进度:%%%f\n", curTime, Node.AVG_CDF * 100);
 		if(dynamic)

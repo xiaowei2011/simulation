@@ -23,34 +23,62 @@ public class GroupBaseDisco extends Disco{
 	}
 	
 	protected boolean discovery(Node node, int slot) {
-		boolean dis = super.discovery(node, slot);
-		if(!dis) {
-			return false;
-		}
-		double l = getCommonNeighborRate(node);
-		for(Neighbor neighbor : node.neighbors.values()) {
-			if(!neighbors.containsKey(neighbor.node.id)) {
-				double ln = node.getCommonNeighborRate(neighbor.node);
-				if(getNeighborProbability(l, ln) <= NBP) {
-					int dt = getNextOverlapSlot(neighbor.node, slot);
-					int nt = getNextActiveSlot(slot);
-					if(nt > 0) {	
-						int at = neighbor.node.getNextActiveSlot(nt);
-						if(at > 0 && at < dt && !schedule[at]) {
-							schedule[at] = true;
-							if(activeSlot.containsKey(at)) {
-								activeSlot.put(at, activeSlot.get(at) + 1);
-							}else {
-								activeSlot.put(at, 1);
-							}
-							INC_SLOT++;
-							TOTAL_INC_SLOT++;
+		if(this.isWithinRadioRange(node) && node.isWithinRadioRange(this)) {
+			if(!this.logicNeighbors.containsKey(node.id)) {
+				Neighbor from = new Neighbor(node, slot);
+				Neighbor to = new Neighbor(this, slot);
+				this.logicNeighbors.put(node.id, from);
+				node.logicNeighbors.put(this.id,to);
+				LOGIC_NEIGHBOR_NUM++;
+			}
+			if(this.isWake(slot) && node.isWake(slot)) {
+				if(!this.neighbors.containsKey(node.id)) {
+					Neighbor from = this.logicNeighbors.get(node.id);
+					Neighbor to = node.logicNeighbors.get(this.id);
+					from.discoveryTime = to.discoveryTime = slot - from.meetTime;
+					this.neighbors.put(node.id, from);
+					node.neighbors.put(this.id, to);
+					TOTAL_DISCOVERY_TIME += from.discoveryTime;
+					NEIGHBOR_NUM++;
+					AVG_DISCOVERY_TIME = TOTAL_DISCOVERY_TIME / NEIGHBOR_NUM;
+					//设置主动苏醒时隙
+					double l = getCommonNeighborRate(node);
+					for(Neighbor neighbor : node.neighbors.values()) {
+						if(!neighbors.containsKey(neighbor.node.id)) {
+							double ln = node.getCommonNeighborRate(neighbor.node);
+							if(getNeighborProbability(l, ln) <= NBP) {
+								int dt = getNextOverlapSlot(neighbor.node, slot);
+								int nt = getNextActiveSlot(slot);
+								if(nt > 0) {	
+									int at = neighbor.node.getNextActiveSlot(nt);
+									if(at > 0 && at < dt && !schedule[at]) {
+										schedule[at] = true;
+										if(activeSlot.containsKey(at)) {
+											activeSlot.put(at, activeSlot.get(at) + 1);
+										}else {
+											activeSlot.put(at, 1);
+										}
+										INC_SLOT++;
+										TOTAL_INC_SLOT++;
+									}
+								}
+							}	
 						}
 					}
-				}	
+				}
+				return true;
+			}
+		}else {
+			if(this.logicNeighbors.containsKey(node.id)) {
+				this.logicNeighbors.remove(node.id);
+				node.logicNeighbors.remove(this.id);
+			}
+			if(this.neighbors.containsKey(node.id)) {
+				this.neighbors.remove(node.id);
+				node.neighbors.remove(this.id);
 			}
 		}
-		return true;	
+		return false;
 	}
 	
 	//计算是邻居概率
